@@ -5,7 +5,7 @@ module Actions (
   , push
   , pull
   , delete
-  , link
+  , symlink
 ) where
 
 import Control.Monad
@@ -21,16 +21,16 @@ compare
     :: OsPath       -- ^ staging base path
     -> DirTree ()   -- ^ staging tree
     -> IO Bool
-compare base = visitFiles checker base
+compare = visitFiles checker
     where   checker :: OsPath -> OsPath -> IO Bool
             checker sp pp = do
                 e <- doesFileExist pp
                 if not e then do
-                    putStrLn $ "[MISSING] " ++ (osPathToString pp)
+                    putStrLn $ "[MISSING] " ++ osPathToString pp
                 else do
                     same <- filesHaveSameContent sp pp
-                    when (not same) $ do
-                        putStrLn $ "[DIFFERS] " ++ (osPathToString pp)
+                    unless same $ do
+                        putStrLn $ "[DIFFERS] " ++ osPathToString pp
                 return True
 
 
@@ -43,7 +43,7 @@ push
     :: OsPath       -- ^ staging base path
     -> DirTree ()   -- ^ staging tree
     -> IO Bool
-push base = visitFiles pusher base
+push = visitFiles pusher 
     where   pusher :: OsPath -> OsPath -> IO Bool
             pusher sp pp = do
                 e <- doesFileExist pp
@@ -72,7 +72,7 @@ pull
     :: OsPath       -- ^ staging base path
     -> DirTree ()   -- ^ staging tree
     -> IO Bool
-pull base = visitFiles puller base
+pull = visitFiles puller 
     where   puller :: OsPath -> OsPath -> IO Bool
             puller sp pp = do
                 doDelete <- not <$> doesFileExist pp
@@ -82,10 +82,8 @@ pull base = visitFiles puller base
                         not <$> filesHaveSameContent sp pp
                 if doDelete then do 
                     removeFile sp
-                else if doCopy then do
+                else when doCopy $ do
                     copyFileWithMetadata pp sp
-                else
-                    return ()
                 return True
 
 -- | Unstow, i.e., remove files from production.
@@ -95,7 +93,7 @@ delete
     :: OsPath       -- ^ staging base path
     -> DirTree ()
     -> IO Bool
-delete base = visitFiles deleter base
+delete = visitFiles deleter
     where   deleter :: OsPath -> OsPath -> IO Bool
             deleter _ pp = do
                 doDelete <- doesFileExist pp
@@ -103,12 +101,12 @@ delete base = visitFiles deleter base
                     removeFile pp
                 return True
 
--- | Link files in production to stagin
-link
+-- | Symlink files in production to stagin
+symlink
     :: OsPath       -- ^ staging base path
     -> DirTree ()
     -> IO Bool
-link base = visitFiles linker base
+symlink = visitFiles linker
     where   linker :: OsPath -> OsPath -> IO Bool
             linker sp pp = do
                 createDirectoryIfMissing True $

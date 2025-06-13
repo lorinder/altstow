@@ -7,7 +7,7 @@ import System.OsPath (encodeUtf)
 import Control.Monad
 import Options.Applicative
 
-import Actions (compare, push, pull, delete, link)
+import Actions (compare, push, pull, delete, symlink)
 import DirTree
 
 data CmdLine = CmdLine {
@@ -16,7 +16,7 @@ data CmdLine = CmdLine {
       , clPush              :: Bool
       , clPull              :: Bool
       , clDelete            :: Bool
-      , clLink              :: Bool
+      , clSymlink           :: Bool
     
         -- Directories to operate on
       , clDirs              :: [String]
@@ -38,16 +38,16 @@ cmdLineParser = CmdLine
             <> short 'D'
             <> help "Remove files from production" )
     <*> flag False True (
-            long "link"
+            long "symlink"
             <> short 'S'
-            <> help "Link files in production to staging" )
+            <> help "Symlink files in production to staging" )
     <*> many (argument str (metavar "DIRS..."))
 
 data Action = Compare | Push | Pull | Delete | Link deriving(Show)
 
 getAction :: CmdLine -> Either String Action
 getAction cl = getAction' (clCompare cl) (clPush cl) (clPull cl)
-                (clDelete cl) (clLink cl)
+                (clDelete cl) (clSymlink cl)
     where   getAction' True  False False False False = Right Compare
             getAction' False True  False False False = Right Push
             getAction' False False True  False False = Right Pull
@@ -77,13 +77,13 @@ main = do
             Push -> push d tr
             Pull -> pull d tr
             Delete -> delete d tr
-            Link -> link d tr
+            Link -> symlink d tr
         )
     where
         opts = info (helper <*> cmdLineParser)
             ( fullDesc
-                <> progDesc ("Copy based alternative to the \"stow\"; "
-                    ++ "utility.  This version copies files instead of "
-                    ++ "creating symbolic links.  It therefore also "
-                    ++ "works on Windows.")
-                <> header "altstow - copy based alternative to stow" )
+                <> progDesc ("Minimal alternative to the \"stow\"; utility.  "
+                    ++ "This version is able to copy files instead of "
+                    ++ "creating symbolic links.  It therefore also works "
+                    ++ "when symlinks are unavailable or unsuitable.")
+                <> header "altstow - minimal alternative to stow")
