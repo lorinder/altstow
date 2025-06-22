@@ -39,7 +39,7 @@ instance Foldable DirTree where
 
 flattenAttribs :: DirTree a -> [a]
 flattenAttribs (File _ x) = [x]
-flattenAttribs (Dir _ xs) = concat $ map flattenAttribs xs
+flattenAttribs (Dir _ xs) = concatMap flattenAttribs xs
 
 -- IO functions
 
@@ -86,7 +86,7 @@ walk path f (File name attr) = do
     r <- f (path </> name) attr
     return [r]
 walk path f (Dir name xs) = do
-    l <- sequence $ map (walk (path </> name) f) xs
+    l <- mapM (walk (path </> name) f) xs
     return $ concat l
 
 --
@@ -148,7 +148,7 @@ mergeNode path (Dir name xs) (Dir _ ys) f = do
     ents <- mergeLists path xs ys f
     pure $ Dir name ents
 mergeNode path x _ _ =
-    Left $ "Node type mismatch for " ++ (osPathToString (path </> rootName x))
+    Left $ "Node type mismatch for " ++ osPathToString (path </> rootName x)
 
 merge :: DirTree a
       -> DirTree b

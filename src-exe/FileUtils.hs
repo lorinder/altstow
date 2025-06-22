@@ -3,22 +3,17 @@ module FileUtils (
   , osPathToString
 ) where
 
-import System.IO (IOMode(ReadMode))
-import System.OsPath as P
-import System.File.OsPath (withBinaryFile)
-import Data.ByteString as B 
+import Data.ByteString          as B 
+import Data.Maybe               (fromMaybe) 
+import System.IO                (IOMode(ReadMode))
+import System.OsPath            as P
+import System.File.OsPath       (withBinaryFile)
 
--- Check whether two files have the same content.
---
--- We explicitly manage the file handles rather than doing lazy I/O to
--- ensure that file handles are closed immediately after the operation.
--- This is necessary because otherwise a subsequent operation such as a
--- file rename of the same files may fail on Windows (an open file
--- can't be renamed on that OS).
+-- | Check whether two files have the same content.
 filesHaveSameContent
-    :: OsPath
-    -> OsPath
-    -> IO Bool
+    :: OsPath                   -- ^ first file
+    -> OsPath                   -- ^ second file
+    -> IO Bool                  -- ^ true if matching, false otherwise
 filesHaveSameContent a b = do
     withBinaryFile a ReadMode (\ha -> do
         withBinaryFile b ReadMode (\hb -> do
@@ -38,11 +33,15 @@ filesHaveSameContent a b = do
                     -- keep checking
                     checkMatch ha hb
 
+-- | Convert an OsPath to a string.
+--
+-- Convert to a string for the purpose of displaying error messages.  We
+-- assume utf-8 encoding.  Currently the error handling is primitive:
+-- any invalid utf-8 will result in "[unrepresentable]" rather than an
+-- approximation to be displayed.
 osPathToString
     :: OsPath
     -> String
 osPathToString p =
-    let m_str = (decodeUtf p) :: Maybe String
-    in case m_str of
-            Just s -> s
-            Nothing -> "[unrepresentable]"
+    let m_str = decodeUtf p :: Maybe String
+    in  fromMaybe "[unrepresentable]" m_str
