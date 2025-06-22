@@ -1,9 +1,9 @@
 cabal-version:      3.4
-name:               altstow
+name:               astow
 version:            0.1.0.0
 
 -- A short (one-line) description of the package.
-synopsis:           Tool similar to stow using file copies
+synopsis:           Copy-based alternative to stow
 
 -- A longer description of the package.
 -- description:
@@ -28,7 +28,7 @@ common dialect
     default-language: GHC2021
     default-extensions: OverloadedStrings
 
-executable altstow
+executable astow
     import:           dialect, warnings
     main-is:          Main.hs
 
